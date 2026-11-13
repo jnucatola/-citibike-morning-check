@@ -7,7 +7,7 @@ Runs at **7:45 AM Monday–Friday, New York time** using GitHub Actions. Checks 
 1. Create a **new GitHub repository** (suggested name `citibike-morning-check`) and upload the contents of this folder to its default `main` branch, retaining `.github/workflows/morning.yml`.
 2. Open the repository's **Actions** tab, select **Citi Bike morning report**, and use **Run workflow** to test it immediately.
 3. See the result under **Actions → latest run → Summary**, or open `reports/latest.md` in the repository. Each day has a dated file in `reports/`.
-4. (Optional) To get a real **email alert**, configure the six repository Actions secrets described below. Without these secrets, the program saves a GitHub report but **does not send a push notification**.
+4. For **iPhone push notifications**, see the setup section below. (Optional) To get a real **email alert**, configure the six repository Actions secrets described below. Without these secrets, the program saves a GitHub report but **does not send a push notification**.
 
 > GitHub Actions can run later than the exact cron time; scheduling at 7:45 AM does not guarantee a notification at precisely 7:45 AM. Scheduled workflows on public repos may be disabled after prolonged inactivity.
 
@@ -44,3 +44,14 @@ python3 -m unittest discover -s tests -v
 ```
 
 Requires Python 3.11+ and an internet connection. All network calls use standard Python libraries; no package installation needed.
+
+## iPhone push notifications (ntfy)
+
+1. Install the **ntfy** app for iPhone from https://ntfy.sh/ (App Store link there), and allow notifications.
+2. Create a long random, hard-to-guess topic, such as a 32+ character random string. Do **not** use a short topic like `citibike`: ntfy.sh topics are publicly accessible to anyone who knows the name.
+3. In the ntfy iPhone app, tap **Subscribe**, choose server `https://ntfy.sh`, and enter your exact topic.
+4. In this GitHub repo, visit **Settings → Secrets and variables → Actions → New repository secret**. Create a secret called **NTFY_TOPIC** whose value is *only* that topic name (not a URL).
+5. Open **Actions → Citi Bike morning report → Run workflow**, then check that the phone receives a notification. The report is sent even when inventory is unavailable.
+6. You can turn the push notifications off by deleting `NTFY_TOPIC` from GitHub Secrets.
+
+No ntfy account or API key is required for basic use of the public ntfy.sh server. Anyone with the exact topic name can read and publish notifications to it; choose a long unguessable topic and don't publish private details. ntfy and GitHub Actions may delay notifications; they are not guaranteed to arrive at exactly 7:45 AM.
