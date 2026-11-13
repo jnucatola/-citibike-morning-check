@@ -182,6 +182,43 @@ def send_email(subject, body):
     return True
 
 
+
+def send_iphone_push(bike, weather, errors):
+    """Publish one concise iPhone alert via ntfy when NTFY_TOPIC is configured."""
+    topic = os.getenv('NTFY_TOPIC', '').strip()
+    if not topic:
+        return False
+    # Topics are URL path segments, not full URLs.
+    if not (8 <= len(topic) <= 128 and all(c.isascii() and (c.isalnum() or c in '-_') for c in topic)):
+        raise ValueError('NTFY_TOPIC must be 8-128 characters: letters, digits, - or _')
+    if bike:
+        message = f"Carroll & Columbia: {bike['ebikes']} e-bike(s); {bike['total_bikes']} total bikes."
+        if bike['ebikes'] == 0:
+            alt = bike.get('alternative')
+            message += (f" Closest with e-bikes: {alt['name']} ({alt['ebikes']}), "
+                        f"~{alt['straight_line_m']}m straight-line." if alt else
+                        " No verified alternative found.")
+    else:
+        message = "Carroll & Columbia e-bike inventory could not be verified."
+    if weather:
+        message += (f" Weather: {weather['temperature_f']}°F, "
+                    f"feels {weather['feels_like_f']}°F; {weather['conditions']}.")
+    if errors:
+        message += " Some live data could not be retrieved."
+    headers = {'Title': 'Citi Bike morning report', 'Priority': 'default',
+               'Content-Type': 'text/plain; charset=utf-8'}
+    if bike and bike['ebikes'] == 0 and bike.get('alternative'):
+        headers['Click'] = bike['alternative']['google_walking_directions']
+    else:
+        headers['Click'] = 'https://github.com/jnucatola/-citibike-morning-check/blob/main/reports/latest.md'
+    request = Request('https://ntfy.sh/' + topic, data=message.encode('utf-8'),
+                      headers=headers, method='POST')
+    with urlopen(request, timeout=20) as response:
+        if not 200 <= response.status < 300:
+            raise RuntimeError(f'ntfy returned status {response.status}')
+    return True
+
+
 def main():
     now = dt.datetime.now(dt.timezone.utc)
     errors = []
@@ -206,6 +243,7 @@ def main():
     }, indent=2) + '\n', encoding='utf-8')
     with open(os.getenv('GITHUB_STEP_SUMMARY', os.devnull), 'a', encoding='utf-8') as f:
         f.write(report)
+    send_iphone_push(bike, weather, errors)
     send_email(f"Citi Bike: {bike['ebikes'] if bike else 'unknown'} e-bikes at Carroll & Columbia", report)
     # Fail if inventory fails, so the GitHub workflow signals an error; report still saved.
     if bike is None:
