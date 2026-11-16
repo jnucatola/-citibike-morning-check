@@ -1,15 +1,19 @@
 {
-  "checked_at_utc": "2026-11-14T05:23:33.201397+00:00",
+  "checked_at_utc": "2026-11-16T22:30:00.110769+00:00",
   "bike": {
     "station": "Carroll St & Columbia St",
     "station_id": "66de44ba-0aca-11e7-82f6-3863bb44ef7c",
-    "ebikes": 21,
-    "total_bikes": 33,
-    "last_reported": 1794633685,
+    "ebikes": 7,
+    "total_bikes": 14,
+    "last_reported": 1794868136,
     "alternative": null
   },
-  "weather": null,
-  "errors": [
-    "Weather: <urlopen error _ssl.c:994: The handshake operation timed out>"
-  ]
+  "weather": {
+    "temperature_f": 49.7,
+    "feels_like_f": 42.0,
+    "conditions": "Clear",
+    "observed_time": "2026-11-16T17:30",
+    "source": "Open-Meteo current model conditions"
+  },
+  "errors": []
 }
