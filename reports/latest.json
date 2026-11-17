@@ -1,18 +1,23 @@
 {
-  "checked_at_utc": "2026-11-16T22:30:00.110769+00:00",
+  "checked_at_utc": "2026-11-17T21:19:47.155112+00:00",
   "bike": {
     "station": "Carroll St & Columbia St",
     "station_id": "66de44ba-0aca-11e7-82f6-3863bb44ef7c",
-    "ebikes": 7,
-    "total_bikes": 14,
-    "last_reported": 1794868136,
-    "alternative": null
+    "ebikes": 0,
+    "total_bikes": 6,
+    "last_reported": 1794950282,
+    "alternative": {
+      "name": "President St & Henry St",
+      "ebikes": 2,
+      "straight_line_m": 303,
+      "google_walking_directions": "https://www.google.com/maps/dir/?api=1&origin=40.6830456%2C-74.00348559&destination=40.6828003%2C-73.99990419&travelmode=walking"
+    }
   },
   "weather": {
-    "temperature_f": 49.7,
-    "feels_like_f": 42.0,
+    "temperature_f": 55.9,
+    "feels_like_f": 50.4,
     "conditions": "Clear",
-    "observed_time": "2026-11-16T17:30",
+    "observed_time": "2026-11-17T16:15",
     "source": "Open-Meteo current model conditions"
   },
   "errors": []
