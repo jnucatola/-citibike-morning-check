@@ -176,9 +176,17 @@ def send_email(subject, body):
     msg.set_content(body)
     host = os.environ['SMTP_HOST']
     port = int(os.getenv('SMTP_PORT') or '465')
-    with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=30) as smtp:
-        smtp.login(os.environ['SMTP_USER'], os.environ['SMTP_PASSWORD'])
-        smtp.send_message(msg)
+    if port == 465:
+        with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=30) as smtp:
+            smtp.login(os.environ['SMTP_USER'], os.environ['SMTP_PASSWORD'])
+            smtp.send_message(msg)
+    else:
+        with smtplib.SMTP(host, port, timeout=30) as smtp:
+            smtp.ehlo()
+            smtp.starttls(context=ssl.create_default_context())
+            smtp.ehlo()
+            smtp.login(os.environ['SMTP_USER'], os.environ['SMTP_PASSWORD'])
+            smtp.send_message(msg)
     return True
 
 
