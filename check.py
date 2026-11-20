@@ -9,19 +9,32 @@ from pathlib import Path
 import smtplib
 import ssl
 from email.message import EmailMessage
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urljoin
+import time
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
 STATION_ID = '66de44ba-0aca-11e7-82f6-3863bb44ef7c'
 STATION_NAME = 'Carroll St & Columbia St'
 DEFAULT_LAT, DEFAULT_LON = 40.683046, -74.003486
-BASES = [
-    'https://gbfs.lyft.com/gbfs/2.3/bkn/en/',
-    'https://gbfs.citibikenyc.com/gbfs/en/',
-]
+DISCOVERY_URLS = ['https://gbfs.citibikenyc.com/gbfs/gbfs.json', 'https://gbfs.citibikenyc.com/gbfs/2.3/gbfs.json']
 TZ = ZoneInfo('America/New_York')
-MAX_AGE_SECONDS = 20 * 60
+MAX_AGE_SECONDS = 5 * 60
+
+def feed_urls(catalog, catalog_url):
+    data = catalog.get('data', {})
+    if 'feeds' in data:
+        feeds = data['feeds']
+    else:
+        locale = data.get('en') or data.get('en-US')
+        if locale is None:
+            locale = next((v for v in data.values() if isinstance(v, dict) and 'feeds' in v), {})
+        feeds = locale.get('feeds', [])
+    found = {entry['name']: urljoin(catalog_url, entry['url']) for entry in feeds
+             if isinstance(entry, dict) and entry.get('name') and entry.get('url')}
+    if 'station_information' not in found or 'station_status' not in found:
+        raise ValueError('GBFS catalog is missing required station feeds')
+    return found
 
 
 def get_json(url: str) -> dict:
@@ -32,18 +45,20 @@ def get_json(url: str) -> dict:
 
 def load_feeds():
     errors = []
-    for base in BASES:
-        try:
-            info = get_json(base + 'station_information.json')
-            status = get_json(base + 'station_status.json')
+    for catalog_url in DISCOVERY_URLS:
+        for attempt in range(3):
             try:
-                types = get_json(base + 'vehicle_types.json')
-            except Exception:
-                types = {'data': {'vehicle_types': []}}
-            return info['data']['stations'], status['data']['stations'], types.get('data', {}).get('vehicle_types', []), base
-        except (ValueError, KeyError, OSError) as ex:
-            errors.append(f'{base}: {ex}')
-    raise RuntimeError('Could not read Citi Bike live feeds: ' + '; '.join(errors))
+                urls = feed_urls(get_json(catalog_url), catalog_url)
+                info = get_json(urls['station_information'])
+                status = get_json(urls['station_status'])
+                types = get_json(urls['vehicle_types']) if 'vehicle_types' in urls else {'data': {'vehicle_types': []}}
+                return (info['data']['stations'], status['data']['stations'],
+                        types.get('data', {}).get('vehicle_types', []), catalog_url)
+            except (ValueError, KeyError, OSError, TypeError) as ex:
+                errors.append(str(ex))
+                if attempt < 2:
+                    time.sleep(2 * (attempt + 1))
+    raise RuntimeError('Unable to verify official live GBFS inventory: ' + '; '.join(errors[-6:]))
 
 
 def electric_type_ids(vehicle_types):
@@ -71,7 +86,7 @@ def haversine_m(lat1, lon1, lat2, lon2):
 
 
 def healthy(station, now):
-    if station.get('is_renting') is False or station.get('is_installed') is False:
+    if station.get('is_renting') not in (True, 1) or station.get('is_installed') not in (True, 1):
         return False
     reported = station.get('last_reported')
     return isinstance(reported, (int, float)) and 0 <= now.timestamp() - reported <= MAX_AGE_SECONDS
@@ -84,8 +99,10 @@ def select_stations(info, statuses, types, now):
     primary = states.get(STATION_ID)
     if not primary or not primary_info:
         raise RuntimeError('Carroll & Columbia station missing from current Citi Bike feed')
+    if primary.get('is_renting') not in (True, 1) or primary.get('is_installed') not in (True, 1):
+        raise RuntimeError('Carroll & Columbia station is unavailable for rentals')
     if not healthy(primary, now):
-        raise RuntimeError('Carroll & Columbia station data is stale or station not renting')
+        raise RuntimeError('Carroll & Columbia status is stale or missing')
     electric_ids = electric_type_ids(types)
     count = ebike_count(primary, electric_ids)
     if count is None:
@@ -114,7 +131,7 @@ def select_stations(info, statuses, types, now):
                                google_walking_directions='https://www.google.com/maps/dir/?' + urlencode({
                                    'api': '1', 'origin': origin, 'destination': destination, 'travelmode': 'walking'}))
     return dict(station=primary_info['name'], station_id=STATION_ID, ebikes=count,
-                total_bikes=available, last_reported=primary['last_reported'], alternative=alternative)
+                total_bikes=available, last_reported=primary['last_reported'], is_renting=True, alternative=alternative)
 
 
 WEATHER_CODES = {
@@ -140,7 +157,9 @@ def report_md(now, bike, weather, errors):
     lines = [f'# Citi Bike morning report — {date}', '', f'**Station:** {STATION_NAME}, Brooklyn', '']
     if bike:
         lines += [f"**E-bikes available:** {bike['ebikes']}",
-                  f"**All bikes available:** {bike['total_bikes'] if bike['total_bikes'] is not None else 'Unknown'}", '']
+                  f"**All bikes available:** {bike['total_bikes'] if bike['total_bikes'] is not None else 'Unknown'}",
+                  '**Rental status:** Renting',
+                  f"**Station status timestamp:** {dt.datetime.fromtimestamp(bike['last_reported'], TZ).isoformat()}", '']
         if bike['ebikes'] == 0:
             alt = bike['alternative']
             if alt:
@@ -151,6 +170,7 @@ def report_md(now, bike, weather, errors):
                 lines += ['**Alternative:** No verified station with e-bikes found in the available feed.', '']
     else:
         lines += ['**E-bikes available:** Unable to verify', '**All bikes available:** Unable to verify',
+                  '**Rental status:** Unverified or unavailable',
                   '**Nearest alternative:** Cannot determine without live inventory', '']
     if weather:
         lines += [f"**Weather:** {weather['temperature_f']}°F · Feels like {weather['feels_like_f']}°F · {weather['conditions']}",
