@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 STATION_ID = '66de44ba-0aca-11e7-82f6-3863bb44ef7c'
 STATION_NAME = 'Carroll St & Columbia St'
 DEFAULT_LAT, DEFAULT_LON = 40.683046, -74.003486
-DISCOVERY_URLS = ['https://gbfs.citibikenyc.com/gbfs/gbfs.json', 'https://gbfs.citibikenyc.com/gbfs/2.3/gbfs.json']
+DISCOVERY_URLS = ['https://gbfs.citibikenyc.com/gbfs/2.3/gbfs.json', 'https://gbfs.citibikenyc.com/gbfs/gbfs.json']
 TZ = ZoneInfo('America/New_York')
 MAX_AGE_SECONDS = 5 * 60
 
