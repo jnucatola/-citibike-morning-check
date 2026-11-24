@@ -1,11 +1,14 @@
-# Citi Bike morning report — Friday, November 20, 2026 · 3:42 PM EST
+# Citi Bike morning report — Monday, November 23, 2026 · 7:21 PM EST
 
 **Station:** Carroll St & Columbia St, Brooklyn
 
-**E-bikes available:** 1
-**All bikes available:** 6
+**E-bikes available:** 7
+**All bikes available:** 21
+**Rental status:** Renting
+**Station status timestamp:** 2026-11-23T19:19:56-05:00
 
-**Weather:** 67.5°F · Feels like 62.4°F · Clear
-*Weather source: Open-Meteo current model conditions (2026-11-20T15:30).*
+**Weather:** Unable to verify
+
+**Data issues:** Weather: <urlopen error _ssl.c:994: The handshake operation timed out>
 
 *Availability is a snapshot and can change before arrival.*
