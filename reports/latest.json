@@ -1,19 +1,19 @@
 {
-  "checked_at_utc": "2026-11-24T22:45:28.423033+00:00",
+  "checked_at_utc": "2026-11-25T21:58:25.110785+00:00",
   "bike": {
     "station": "Carroll St & Columbia St",
     "station_id": "66de44ba-0aca-11e7-82f6-3863bb44ef7c",
-    "ebikes": 9,
-    "total_bikes": 25,
-    "last_reported": 1795560266,
+    "ebikes": 1,
+    "total_bikes": 23,
+    "last_reported": 1795643680,
     "is_renting": true,
     "alternative": null
   },
   "weather": {
-    "temperature_f": 43.5,
-    "feels_like_f": 34.1,
-    "conditions": "Clear",
-    "observed_time": "2026-11-24T17:45",
+    "temperature_f": 40.2,
+    "feels_like_f": 33.2,
+    "conditions": "Overcast",
+    "observed_time": "2026-11-25T16:45",
     "source": "Open-Meteo current model conditions"
   },
   "errors": []
